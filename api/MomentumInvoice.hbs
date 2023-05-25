@@ -1,0 +1,86 @@
+openapi: 3.0.3
+info:
+  title: Momentum Invoice Validation - OpenAPI 3.0
+  description: |-
+    Invoice Validation API based on the OpenAPI 3.0 specification.  
+  contact:
+    email: ncrowther@uk.ibm.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.11
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+  - url: http://localhost:8080/api/v3
+tags:
+  - name: invoice
+    description: Invoice validation API
+    externalDocs:
+      description: Find out more
+      url: http://swagger.io
+paths:
+  /invoice:
+    post:
+      tags:
+        - invoice
+      summary: Send invoice to be validated
+      description: Send an invoice
+      operationId: sendInvoice
+      requestBody:
+        description: Send an invoice
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'          
+        '405':
+          description: Invalid input
+components:
+  schemas:
+    Tag:
+      type: object
+      properties:
+        productCode:
+          type: string
+        decription:
+          type: string     
+        quantity:
+          type: string  
+        units:
+          type: string    
+        vat:
+          type: string  
+        netPrice:
+          type: string   
+        totalPrice:
+          type: string          
+    Invoice:
+      required:
+        - invoiceNumber
+      type: object
+      properties:
+        invoiceNumber:
+          type: string
+          example: INV9873498
+        invoiceDate:
+          type: string
+          example: 15/06/1967          
+        totalAmount:
+          type: string
+          example: 10.45          
+        lineItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'

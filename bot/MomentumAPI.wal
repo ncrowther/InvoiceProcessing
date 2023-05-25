@@ -1,0 +1,19 @@
+ñ// Description
+//	Invoke invoice API using REST
+// Input Variables
+//	in_payload			    - The invoice to process (json)
+//
+// Output Variables
+// 	out_success			- Boolean value indicating success or failure
+// 	out_code				- 00 if success, any other number represents an error code
+// 	out_desc				- Description of error code. For example "Failed to parse VAT
+//
+// Author:	Nigel T. Crowther
+// Date: 		25-May-2023
+// Copyright IBM Corporation 2022. All rights reserved
+defVar --name in_payload --type String --value "{\r\n  \"invoiceNumber\": \"INV9873498\",\r\n  \"invoiceDate\": \"15/06/1967\",\r\n  \"totalAmount\": 10,\r\n  \"lineItems\": [\r\n    {\r\n      \"productCode\": \"string\",\r\n      \"decription\": \"string\",\r\n      \"quantity\": \"string\",\r\n      \"units\": \"string\",\r\n      \"vat\": \"string\",\r\n      \"netPrice\": \"string\",\r\n      \"totalPrice\": \"string\"\r\n    },\r\n        {\r\n      \"productCode\": \"string\",\r\n      \"decription\": \"string\",\r\n      \"quantity\": \"string\",\r\n      \"units\": \"string\",\r\n      \"vat\": \"string\",\r\n      \"netPrice\": \"string\",\r\n      \"totalPrice\": \"string\"\r\n    }\r\n  ]\r\n}" --parameter  --required
+defVar --name out_success --type Boolean --value True --output
+defVar --name out_code --type Numeric --value 0 --output
+defVar --name out_desc --type String --value SUCCESS --output
+httpRequest --verb "Post" --url "http://localhost:8080/api/v3/invoice" --formatter "Json" --source "${in_payload}" out_success=success out_desc=value out_code=statusCode
+logMessage --message "Response Status Code: ${out_code}" --type "Info"*23.0.0.0

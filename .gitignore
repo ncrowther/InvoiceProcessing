@@ -1,0 +1,6 @@
+
+*.log
+*.wad
+/failedInvoices/
+/paidInvoices/
+/api/nodejs-server-server

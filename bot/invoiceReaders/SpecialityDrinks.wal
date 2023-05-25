@@ -1,0 +1,171 @@
+Å:// Description
+//	Process invoice
+// Input Variables
+//	in_invoice			- The invoice to process (pdf file)
+//
+// Output Variables
+// 	out_invoiceNumber		- The extracted invoice number
+// 	out_invoiceDate			- The invoice date
+// 	out_amountNumber		- The invoice total amount
+// 	out_vatNumber			- The invoice VAT amount
+// 	out_vatNumber			- The invoice VAT amount
+// 	out_success			- Boolean value indicating success or failure
+// 	out_code				- 00 if success, any other number represents an error code
+// 	out_desc				- Description of error code. For example "Failed to parse VAT
+//
+// Author:	Nigel T. Crowther
+// Date: 		26-Oct-2022
+// Copyright IBM Corporation 2022. All rights reserved
+//
+defVar --name in_invoice --type String --value "D:\\RPA\\github\\invoiceProcessingPAM_DM_RPA\\InvoiceApproval\\InvoiceProcessing-RPA\\testInvoices\\Momentum\\SO300323_143759_8040362 POSTED.pdf" --parameter  --required
+defVar --name out_payload --type String --output
+defVar --name out_success --type Boolean --value True --output
+defVar --name out_code --type String --value 0 --output
+defVar --name out_desc --type String --value SUCCESS --output
+defVar --name amountText --type String
+defVar --name pdf --type Pdf
+defVar --name fieldName --type String
+defVar --name invoiceDateTime --type DateTime
+defVar --name extractedImage --type Image
+defVar --name customFormat --type String --value "dd/MM/yyyy"
+defVar --name reason --type String
+defVar --name excelFileInstance --type Excel
+defVar --name invoiceDataTable --type DataTable
+defVar --name rowCount --type Numeric
+defVar --name tableColumnIndex --type Numeric
+defVar --name tableRowIndex --type Numeric --value 3
+defVar --name productCode --type String --value UNDEFINED
+defVar --name productYCoord --type Numeric
+defVar --name productCellCoord --type Rectangle
+defVar --name vat --type String
+defVar --name vatYCoord --type Numeric
+defVar --name qty --type String
+defVar --name yCoord --type Numeric
+defVar --name cellCoord --type Rectangle
+defVar --name units --type String
+defVar --name netPrice --type String
+defVar --name totalPrice --type String
+defVar --name description --type String
+defVar --name expectedPrice --type Numeric
+defVar --name anchorImage --type Image
+defVar --name invoiceNumber --type String
+defVar --name invoiceDate --type String
+defVar --name sublen --type Numeric
+
+onError --label ParsingErrorHandler
+
+goSub --label processInvoice
+
+pdfRegionText --language "en-US" --region "642,461,72,22" --page 1 --dpix 110 --dpiy 110 --file ${pdf} vat=value
+beginSub --name processInvoice
+	pdfOpen --file "${in_invoice}" out_success=success pdf=value
+	if --left "${out_success}" --operator "Is_True" --negate
+		setVar --name "${out_success}" --value false
+		setVar --name "${out_code}" --value 99
+		setVar --name "${out_desc}" --value "Failed to read PDF ${in_invoice}"
+		logMessage --message " ${out_desc}" --type "Error"
+		return
+	endIf
+	
+	
+// Extract Total Amount
+	pdfRegionText --language "en-US" --region "803,1165,63,27" --page 1 --dpix 110 --dpiy 110 --file ${pdf} amountText=value
+	trimString --text "${amountText}" --trimoption "TrimStartAndEnd" amountText=value
+	
+// Extract invoice number
+	pdfRegionText --language "en-US" --region "585,82,61,19" --page 1 --dpix 110 --dpiy 110 --file ${pdf} invoiceNumber=value
+	trimString --text "${invoiceNumber}" --trimoption "TrimStartAndEnd" invoiceNumber=value
+	
+// Extract invoice date
+	pdfRegionText --language "en-US" --region "791,80,66,24" --page 1 --dpix 110 --dpiy 110 --file ${pdf} invoiceDate=value
+	trimString --text "${invoiceDate}" --trimoption "TrimStartAndEnd" invoiceDate=value
+	
+	goSub --label writeInvoiceHeader
+	
+	goSub --label getLineItems
+	
+	goSub --label writeInvoiceFooter
+	
+	logMessage --message "Result: ${out_payload}" --type "Info"
+	
+endSub
+
+beginSub --name getLineItems
+	setVar --name "${yCoord}" --value 460
+	
+	while --left "${productCode}" --operator "Is_Null" --negate
+		
+	// Product code
+		setVar --name "${cellCoord}" --value "42,${yCoord},109,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} productCode=value
+		trimString --text "${productCode}" --trimoption "TrimStartAndEnd" productCode=value
+		
+	// Description
+		setVar --name "${cellCoord}" --value "156,${yCoord},319,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} description=value
+		trimString --text "${description}" --trimoption "TrimStartAndEnd" description=value
+		
+	// Qty
+		setVar --name "${cellCoord}" --value "478,${yCoord},38,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} qty=value
+		trimString --text "${qty}" --trimoption "TrimStartAndEnd" qty=value
+		
+	// Units
+		setVar --name "${cellCoord}" --value "520,${yCoord},119,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} units=value
+		trimString --text "${units}" --trimoption "TrimStartAndEnd" units=value
+		
+	// VAT
+		setVar --name "${cellCoord}" --value "614,${yCoord},74,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} vat=value
+		trimString --text "${vat}" --trimoption "TrimStartAndEnd" vat=value
+		
+	// Unit Price
+		setVar --name "${cellCoord}" --value "716,${yCoord},72,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} netPrice=value
+		trimString --text "${netPrice}" --trimoption "TrimStartAndEnd" netPrice=value
+		
+	// Total Price
+		setVar --name "${cellCoord}" --value "793,${yCoord},72,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} totalPrice=value
+		trimString --text "${totalPrice}" --trimoption "TrimStartAndEnd" totalPrice=value
+		
+		goSub --label writeLineItem
+		
+		evaluate --expression "${yCoord} + 26" yCoord=value
+		
+	endWhile
+	
+endSub
+
+
+beginSub --name writeInvoiceHeader
+	
+	setVar --name "${out_payload}" --value "{\r\n  \"invoiceNumber\": \"${invoiceNumber}\",\r\n  \"invoiceDate\": \"${invoiceDate}\",\r\n  \"totalAmount\": \"${amountText}\",\r\n  \"lineItems\": [" --comment Amount
+	
+endSub
+
+beginSub --name writeInvoiceFooter
+	getStringLength --text "${out_payload}" sublen=value
+	evaluate --expression "${sublen} - 1" sublen=value
+	getSubString --text "${out_payload}" --start 1 --length ${sublen} --comment "Remove last comma from payload" out_payload=value
+	
+	setVar --name "${out_payload}" --value "${out_payload}\r\n  ]\r\n}" --comment Amount
+	
+endSub
+
+beginSub --name writeLineItem
+	
+	setVar --name "${out_payload}" --value "${out_payload} \r\n   {\r\n      \"productCode\": \"${productCode}\",\r\n      \"decription\": \"${description}\",\r\n      \"quantity\": \"${qty}\",\r\n      \"units\": \"${units}\",\r\n      \"vat\": \"${vat}\",\r\n      \"netPrice\": \"${netPrice}\",\r\n      \"totalPrice\": \"${totalPrice}\"\r\n    }," --comment Amount
+	
+endSub
+
+
+beginSub --name ParsingErrorHandler
+	setVar --name "${out_success}" --value false
+	setVar --name "${out_code}" --value 99
+	setVar --name "${out_desc}" --value "Failed to parse ${fieldName} in ${in_invoice}"
+	logMessage --message " ${out_desc}" --type "Error"
+	recover
+endSub
+*23.0.0.0
