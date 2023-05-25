@@ -1,5 +1,5 @@
 
-	Å';ò6∏πAù‘uÆæv¬–Å// Description
+	Å';ò6∏πAù‘uÆæv¬òu// Description
 //	Process invoices from outlook
 //
 // Author:	Nigel T. Crowther
@@ -11,11 +11,9 @@ defVar --name paidInvoicesFolder --type String
 defVar --name failedInvoicesFolder --type String
 defVar --name botScriptBaseDir --type String
 defVar --name botScript --type String
-defVar --name ifsDropFolder --type String
 defVar --name logEntry --type String
 defVar --name logDir --type String
 defVar --name logFile --type TextFileWriter
-defVar --name ifsXml --type TextFileWriter
 defVar --name unpaidInvoicesOutlookFolder --type String
 defVar --name logData --type String
 defVar --name attachmentsDirectory --type List --innertype String
@@ -45,26 +43,14 @@ defVar --name invoiceNumber --type String
 defVar --name robotName --type String --value "IBM RPA Invoice Processing Robot"
 defVar --name errorMessage --type String
 defVar --name windowsHost --type String
-defVar --name invoiceDate --type String
-defVar --name amountNumber --type Numeric
 defVar --name company --type String
-defVar --name ifsBodyXml --type String
 defVar --name companyCode --type String
-defVar --name supplierId --type String
-defVar --name ifsFileName --type String
 defVar --name fileExists --type Boolean
 defVar --name folderExists --type Boolean
-defVar --name vatNumber --type Numeric
 defVar --name logFileName --type String
-defVar --name currency --type String --value GBP
-defVar --name invoiceNameStartPos --type Numeric
-defVar --name googleDrive --type FileSystem
 defVar --name invoiceName --type String
 defVar --name outlookUser --type String
 defVar --name outlookPwd --type SecureString
-defVar --name ruleA --type Rule
-defVar --name ruleB --type Rule
-defVar --name ruleC --type Rule
 defVar --name attachmentCount --type Numeric
 defVar --name failedInvoiceCount --type Numeric --value 0
 defVar --name successfulInvoiceCount --type Numeric --value 0
@@ -72,13 +58,9 @@ defVar --name unidentifiedInvoiceCount --type Numeric --value 0
 defVar --name processedInvoiceCount --type Numeric --value 0
 defVar --name failedInvoices --type Numeric --value 0
 defVar --name adminUser --type String
-defVar --name invoiceNameWithExt --type String
-defVar --name invoiceJsonFileName --type String
-defVar --name browserInstance --type Browser
-defVar --name browserInstanceName --type String
 defVar --name jsonPayload --type String
-defVar --name scriptSuccess --type Boolean
 defVar --name outSuccess --type String
+defVar --name supplierId --type String
 
 logMessage --message "${robotName} starting..." --type "Info" --logonwindows  --logname Application --source Application --eventid 0
 
@@ -93,7 +75,6 @@ setVar --name "${unpaidInvoicesFolder}" --value "${projectBase}\\unpaidInvoices"
 setVar --name "${paidInvoicesFolder}" --value "${projectBase}\\paidInvoices"
 setVar --name "${failedInvoicesFolder}" --value "${projectBase}\\failedInvoices"
 setVar --name "${botScriptBaseDir}" --value "${projectBase}\\bot"
-setVar --name "${ifsDropFolder}" --value "${projectBase}\\ifs"
 setVar --name "${logDir}" --value "${projectBase}\\logs\\"
 
 onError --label Main_ErrorHandler
@@ -245,15 +226,6 @@ goSub --label getErrorMessage
 goSub --label logError
 endSub
 
-beginSub --name getInvoiceName
-getStringLength --text "${unpaidInvoicesFolder}" invoiceNameStartPos=value
-evaluate --expression "${invoiceNameStartPos} + 2" invoiceNameStartPos=value
-getSubString --text "${invoice}" --start ${invoiceNameStartPos} --length 100 invoiceNameWithExt=value
-replaceText --texttoparse "${invoiceNameWithExt}" --textpattern ".pdf" invoiceName=value
-replaceText --texttoparse "${invoiceName}" --textpattern ".xlsx" invoiceName=value
-replaceText --texttoparse "${invoiceName}" --textpattern ".xls" invoiceName=value
-endSub
-
 beginSub --name executeOCRScript
 
 executeScript --name "${botScriptBaseDir}/determineInvoiceType.wal" --parameters "in_subject=${emailSubject},in_sender=${emailSender},in_invoice=${invoice}" --output "out_success=${outSuccess},out_code=${result_code},out_desc=${result_desc},out_company=${company},out_companyCode=${companyCode},out_supplierId=${supplierId}" success=value
@@ -327,11 +299,6 @@ endIf
 ifFolder --path "${failedInvoicesFolder}" --fileSystem ${fs} folderExists=value
 if --left "${folderExists}" --operator "Is_True" --negate 
 	createDir --path "${failedInvoicesFolder}" --fileSystem ${fs}
-endIf
-
-ifFolder --path "${ifsDropFolder}" --fileSystem ${fs} folderExists=value
-if --left "${folderExists}" --operator "Is_True" --negate 
-	createDir --path "${ifsDropFolder}" --fileSystem ${fs}
 endIf
 
 ifFolder --path "${logDir}" --fileSystem ${fs} folderExists=value
