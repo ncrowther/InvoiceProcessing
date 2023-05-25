@@ -1,267 +1,153 @@
-òf// Description
-//	INVOICE TEMPLATE
+Ò3// Description
+//	Invoice template
 // Input Variables
 //	in_invoice			- The invoice to process (pdf file)
 //
 // Output Variables
-// 	out_invoiceNumber		- The extracted invoice number
-// 	out_invoiceDate			- The invoice date
-// 	out_amountNumber		- The invoice total amount
-// 	out_vatNumber			- The invoice VAT amount
-// 	out_vatNumber			- The invoice VAT amount
+// 	out_payload			- The extracted invoice data as a json payload
 // 	out_success			- Boolean value indicating success or failure
-// 	out_code				- 00 if success, any other number represents an error code
-// 	out_desc				- Description of error code. For example "Failed to parse VAT
+// 	out_code			- 00 if success, any other number represents an error code
+// 	out_desc			- Description of error code. For example "Failed to parse VAT
 //
 // Author:	Nigel T. Crowther
-// Date: 		26-Oct-2022
+// Date: 		26-May-2022
 // Copyright IBM Corporation 2022. All rights reserved
 //
-defVar --name in_invoice --type String --value "20230203203406_Acacia_.pdf" --parameter  --required 
-defVar --name out_invoiceNumber --type String --output 
-defVar --name out_invoiceDate --type String --output 
-defVar --name out_amountNumber --type Numeric --value 0 --output 
-defVar --name out_vatNumber --type Numeric --value 0 --output 
-defVar --name out_success --type Boolean --value True --output 
-defVar --name out_code --type String --value 0 --output 
-defVar --name out_desc --type String --value SUCCESS --output 
+defVar --name in_invoice --type String --value "D:\\RPA\\github\\invoiceProcessingPAM_DM_RPA\\InvoiceApproval\\InvoiceProcessing-RPA\\testInvoices\\Momentum\\SO300323_143759_8040362 POSTED.pdf" --parameter  --required
+defVar --name out_payload --type String --output
+defVar --name out_success --type Boolean --value True --output
+defVar --name out_code --type String --value 0 --output
+defVar --name out_desc --type String --value SUCCESS --output
 defVar --name amountText --type String
 defVar --name pdf --type Pdf
 defVar --name fieldName --type String
-defVar --name invoiceDateTime --type DateTime
-defVar --name extractedImage --type Image
-defVar --name pdf1 --type Pdf
-defVar --name projectBase --type String
-onError --executenext 
-
-getParameter --name invoiceBasePath --comment "Get the base path for the invoices" projectBase=value
-
-goSub --label processInvoice
-
-beginSub --name processInvoice
-pdfOpen --file "${in_invoice}" out_success=success pdf=value
-if --left "${out_success}" --operator "Is_True" --negate 
-	setVar --name "${out_success}" --value false
-	setVar --name "${out_code}" --value 99
-	setVar --name "${out_desc}" --value "Failed to read PDF ${in_invoice}"
-	logMessage --message " ${out_desc}" --type "Error"
-	return
-endIf
-
-// Extract Total Amount
-//@TODO
-//extractPdfText --page 1 --language "en-US" --searchregion "11,461,879,767" --anchor "Total:" --anchorprovider "Google" --comparison "Equal_To" --segmentation "Word" --targetregion "36,-7,70,22" --targetprovider "Google" --file ${pdf} out_success=success amountText=text
-
-if --left "${out_success}" --operator "Is_True" --negate 
-	setVar --name "${out_success}" --value false
-	setVar --name "${out_code}" --value 99
-	setVar --name "${out_desc}" --value "Failed to read total amount"
-	logMessage --message " ${out_desc}" --type "Error"
-	return
-endIf
-
-setVar --name "${fieldName}" --value amount
-onError --label ParsingErrorHandler
-executeScript --name "${projectBase}\\bot\\convertToDecimal.wal" --parameters "in_out_amountText=${amountText},in_fieldName=${fieldName}" --output "in_out_amountText=${amountText}" out_success=value
-if --left "${out_success}" --operator "Is_True" --negate 
-	// Return from parsing exception
-	return
-endIf
-
-convertStringToNumber --culture "en-US" --text "${amountText}" --allowdecimalpoint  --allowthousands  out_amountNumber=value
-if --left "${out_success}" --operator "Is_True" --negate 
-	// Return from parsing exception
-	return
-endIf
-
-// Extract invoice number
-//@TODO
-//extractPdfText --page 1 --language "en-US" --searchregion "22,106,812,95" --anchor "Number:" --anchorprovider "Google" --comparison "Equal_To" --segmentation "Word" --targetregion "110,-10,66,23" --targetprovider "Google" --file ${pdf} out_success=success out_invoiceNumber=text
-
-if --left "${out_success}" --operator "Is_True" --negate 
-	setVar --name "${out_success}" --value false
-	setVar --name "${out_code}" --value 99
-	setVar --name "${out_desc}" --value "Failed to read invoice number"
-	logMessage --message " ${out_desc}" --type "Error"
-	return
-endIf
-trimString --text "${out_invoiceNumber}" --trimoption "TrimStartAndEnd" out_invoiceNumber=value
-replaceText --texttoparse "${out_invoiceNumber}" --textpattern " " --comment "remove spaces" out_invoiceNumber=value
-replaceText --texttoparse "${out_invoiceNumber}" --useregex  --pattern "\\n" --regexOptions "0" out_invoiceNumber=value
-replaceText --texttoparse "${out_invoiceNumber}" --useregex  --pattern INV --regexOptions "0" out_invoiceNumber=value
-
-// Extract invoice date
-//@TODO
-//extractPdfText --page 1 --language "en-US" --searchregion "22,106,812,95" --anchor "Date:" --anchorprovider "Google" --comparison "Equal_To" --segmentation "Word" --targetregion "112,-2,75,15" --targetprovider "Google" --file ${pdf} out_success=success out_invoiceDate=text
-if --left "${out_success}" --operator "Is_True" --negate 
-	setVar --name "${out_success}" --value false
-	setVar --name "${out_code}" --value 99
-	setVar --name "${out_desc}" --value "Failed to read invoice date"
-	logMessage --message " ${out_desc}" --type "Error"
-	return
-endIf
-logMessage --message " Extracted Invoice Date: ${out_invoiceDate}" --type "Error"
-replaceText --texttoparse "${out_invoiceDate}" --useregex  --pattern "\\n" --regexOptions "0" out_invoiceDate=value
-replaceText --texttoparse "${out_invoiceDate}" --textpattern "]" --replacement 1 out_invoiceDate=value
-replaceText --texttoparse "${out_invoiceDate}" --textpattern l --replacement "/" out_invoiceDate=value
-textToDateTime --culture "en-US" --text "${out_invoiceDate}" invoiceDateTime=value
-dateTimeToText --culture "fr-FR" --date "${invoiceDateTime}" --standardformat "ShortDate" out_invoiceDate=value
-
-logMessage --message "Invoice Number: ${out_invoiceNumber} \r\nInvoice Date: ${out_invoiceDate}\r\nInvoice Amount: ${out_amountNumber}" --type "Info"
-endSub
-
-// Description
-//	Process invoice
-// Input Variables
-//	in_invoice			- The invoice to process (pdf file)
-//
-// Output Variables
-// 	out_invoiceNumber		- The extracted invoice number
-// 	out_invoiceDate			- The invoice date
-// 	out_amountNumber		- The invoice total amount
-// 	out_vatNumber			- The invoice VAT amount
-// 	out_vatNumber			- The invoice VAT amount
-// 	out_success			- Boolean value indicating success or failure
-// 	out_code				- 00 if success, any other number represents an error code
-// 	out_desc				- Description of error code. For example "Failed to parse VAT
-//
-// Author:	Nigel T. Crowther
-// Date: 		26-Oct-2022
-// Copyright IBM Corporation 2022. All rights reserved
-//
-defVar --name in_invoice --type String --value "D:\\RPA\\github\\invoiceProcessingPAM_DM_RPA\\InvoiceApproval\\InvoiceProcessing-RPA\\testInvoices\\Momentum\\30503203 Abakus.pdf" --parameter  --required 
-defVar --name out_payload --type String --output 
-defVar --name out_success --type Boolean --value True --output 
-defVar --name out_code --type String --value 0 --output 
-defVar --name out_desc --type String --value SUCCESS --output 
-defVar --name amountText --type String
-defVar --name pdf --type Pdf
-defVar --name fieldName --type String
-defVar --name invoiceDateTime --type DateTime
-defVar --name extractedImage --type Image
-defVar --name customFormat --type String --value "dd/MM/yyyy"
-defVar --name reason --type String
-defVar --name excelFileInstance --type Excel
-defVar --name invoiceDataTable --type DataTable
-defVar --name rowCount --type Numeric
-defVar --name tableColumnIndex --type Numeric
-defVar --name tableRowIndex --type Numeric --value 3
 defVar --name productCode --type String --value UNDEFINED
-defVar --name productYCoord --type Numeric
-defVar --name productCellCoord --type Rectangle
-defVar --name vat --type String --value UNDEFINED
-defVar --name vatYCoord --type Numeric
-defVar --name vatCellCoord --type Rectangle
+defVar --name vat --type String
 defVar --name qty --type String
 defVar --name yCoord --type Numeric
-defVar --name qtyCellCoord --type Rectangle
+defVar --name cellCoord --type Rectangle
 defVar --name units --type String
-defVar --name unitsCellCoord --type Rectangle
 defVar --name netPrice --type String
-defVar --name netPriceCellCoord --type Rectangle
 defVar --name totalPrice --type String
-defVar --name invoiceNumber --type String
-defVar --name totalPriceCellCoord --type Rectangle
 defVar --name description --type String
-defVar --name descriptionCellCoord --type Rectangle
-defVar --name expectedPrice --type Numeric
-defVar --name anchorImage --type Image
-defVar --name jsonPayload --type TextFileWriter
+defVar --name invoiceNumber --type String
 defVar --name invoiceDate --type String
+defVar --name sublen --type Numeric
 
 onError --label ParsingErrorHandler
 
 goSub --label processInvoice
 
+pdfRegionText --language "en-US" --region "642,461,72,22" --page 1 --dpix 110 --dpiy 110 --file ${pdf} vat=value
 beginSub --name processInvoice
-pdfOpen --file "${in_invoice}" out_success=success pdf=value
-if --left "${out_success}" --operator "Is_True" --negate 
-	setVar --name "${out_success}" --value false
-	setVar --name "${out_code}" --value 99
-	setVar --name "${out_desc}" --value "Failed to read PDF ${in_invoice}"
-	logMessage --message " ${out_desc}" --type "Error"
-	return
-endIf
-
-// Extract invoice number (PO)
-pdfRegionText --language "en-US" --region "188,148,68,18" --page 1 --dpix 110 --dpiy 110 --file ${pdf} invoiceNumber=value
-
+	pdfOpen --file "${in_invoice}" out_success=success pdf=value
+	if --left "${out_success}" --operator "Is_True" --negate
+		setVar --name "${out_success}" --value false
+		setVar --name "${out_code}" --value 99
+		setVar --name "${out_desc}" --value "Failed to read PDF ${in_invoice}"
+		logMessage --message " ${out_desc}" --type "Error"
+		return
+	endIf
+	
+	
+// Extract Total Amount
+	pdfRegionText --language "en-US" --region "803,1165,63,27" --page 1 --dpix 110 --dpiy 110 --file ${pdf} amountText=value
+	trimString --text "${amountText}" --trimoption "TrimStartAndEnd" amountText=value
+	
+// Extract invoice number
+	pdfRegionText --language "en-US" --region "585,82,61,19" --page 1 --dpix 110 --dpiy 110 --file ${pdf} invoiceNumber=value
+	trimString --text "${invoiceNumber}" --trimoption "TrimStartAndEnd" invoiceNumber=value
+	
 // Extract invoice date
-pdfRegionText --language "en-US" --region "190,126,73,21" --page 1 --dpix 110 --dpiy 110 --file ${pdf} invoiceDate=value
-
-goSub --label writeInvoiceData
-
-goSub --label getLineItems
-
+	pdfRegionText --language "en-US" --region "791,80,66,24" --page 1 --dpix 110 --dpiy 110 --file ${pdf} invoiceDate=value
+	trimString --text "${invoiceDate}" --trimoption "TrimStartAndEnd" invoiceDate=value
+	
+	goSub --label writeInvoiceHeader
+	
+	goSub --label getLineItems
+	
+	goSub --label writeInvoiceFooter
+	
+	logMessage --message "Result: ${out_payload}" --type "Info"
+	
 endSub
 
 beginSub --name getLineItems
-//setVar --name "${yCoord}" --value 57
-
-//while --left "${productCode}" --operator "Is_Null" --negate
-
-// Product code
-//setVar --name "${productCellCoord}" --value "-7,${yCoord},105,20"
-extractPdfText --page 1 --language "en-US" --searchregion "57,168,67,32" --anchor ITEM --anchorprovider "Google" --comparison "Equal_To" --segmentation "Word" --targetregion "-14,32,62,19" --targetprovider "Google" --file ${pdf} anchorImage=anchor out_success=success extractedImage=image productCode=text
-
-//extractPdfText --page 1 --language "en-US" --searchregion "37,435,116,545" --anchor PRODUCT --anchorprovider "Google" --comparison "Equal_To" --segmentation "Word" --targetregion "${productCellCoord}" --targetprovider "Google" --file ${pdf} out_success=success extractedImage=image productCode=text
-replaceText --texttoparse "${productCode}" --textpattern " " productCode=value
-
-// Description
-//setVar --name "${descriptionCellCoord}" --value "110,${yCoord},322,23"
-extractPdfText --page 1 --language "en-US" --searchregion "57,168,67,32" --anchor ITEM --anchorprovider "Google" --comparison "Equal_To" --segmentation "Word" --targetregion "51,29,215,23" --targetprovider "Google" --file ${pdf} anchorImage=anchor out_success=success extractedImage=image description=text
-
-//extractPdfText --page 1 --language "en-US" --searchregion "40,435,824,669" --anchor PRODUCT --anchorprovider "Google" --comparison "Equal_To" --segmentation "Word" --targetregion "${descriptionCellCoord}" --targetprovider "Google" --file ${pdf} out_success=success extractedImage=image description=text
-
-// Qty
-//setVar --name "${qtyCellCoord}" --value "1,${yCoord},25,18"
-extractPdfText --page 1 --language "en-US" --searchregion "57,168,67,32" --anchor ITEM --anchorprovider "Google" --comparison "Equal_To" --segmentation "Word" --targetregion "492,29,51,23" --targetprovider "Google" --file ${pdf} anchorImage=anchor out_success=success anchorImage=image qty=text
-
-//extractPdfText --page 1 --language "en-US" --searchregion "480,434,36,48" --anchor QTY --anchorprovider "Google" --comparison "Equal_To" --segmentation "Word" --targetregion "${qtyCellCoord}" --targetprovider "Abbyy" --file ${pdf} anchorImage=anchor out_success=success extractedImage=image qty=text
-executeScript --name convertToDecimal --parameters "in_out_amountText=${qty},in_fieldName=qty" --output "in_out_amountText=${qty}" out_success=value
-
-goSub --label writeLineItem
-
-//evaluate --expression "${yCoord} + 26" yCoord=value
-
-//endWhile
-
-
+	setVar --name "${yCoord}" --value 460
+	
+	while --left "${productCode}" --operator "Is_Null" --negate
+		
+	// Product code
+		setVar --name "${cellCoord}" --value "42,${yCoord},109,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} productCode=value
+		trimString --text "${productCode}" --trimoption "TrimStartAndEnd" productCode=value
+		
+	// Description
+		setVar --name "${cellCoord}" --value "156,${yCoord},319,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} description=value
+		trimString --text "${description}" --trimoption "TrimStartAndEnd" description=value
+		
+	// Qty
+		setVar --name "${cellCoord}" --value "478,${yCoord},38,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} qty=value
+		trimString --text "${qty}" --trimoption "TrimStartAndEnd" qty=value
+		
+	// Units
+		setVar --name "${cellCoord}" --value "520,${yCoord},119,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} units=value
+		trimString --text "${units}" --trimoption "TrimStartAndEnd" units=value
+		
+	// VAT
+		setVar --name "${cellCoord}" --value "614,${yCoord},74,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} vat=value
+		trimString --text "${vat}" --trimoption "TrimStartAndEnd" vat=value
+		
+	// Unit Price
+		setVar --name "${cellCoord}" --value "716,${yCoord},72,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} netPrice=value
+		trimString --text "${netPrice}" --trimoption "TrimStartAndEnd" netPrice=value
+		
+	// Total Price
+		setVar --name "${cellCoord}" --value "793,${yCoord},72,24"
+		pdfRegionText --language "en-US" --region "${cellCoord}" --page 1 --dpix 110 --dpiy 110 --file ${pdf} totalPrice=value
+		trimString --text "${totalPrice}" --trimoption "TrimStartAndEnd" totalPrice=value
+		
+		goSub --label writeLineItem
+		
+		evaluate --expression "${yCoord} + 26" yCoord=value
+		
+	endWhile
+	
 endSub
 
 
-beginSub --name writeInvoiceData
+beginSub --name writeInvoiceHeader
+	
+	setVar --name "${out_payload}" --value "{\r\n  \"invoiceNumber\": \"${invoiceNumber}\",\r\n  \"invoiceDate\": \"${invoiceDate}\",\r\n  \"totalAmount\": \"${amountText}\",\r\n  \"lineItems\": [" --comment Amount
+	
+endSub
 
-setVar --name "${tableColumnIndex}" --value 1
-setVar --name "${out_payload}" --value "${invoiceNumber}"
-
-//excelSet --value "${out_invoiceNumber}" --file ${excelFileInstance} --getfirstsheet  --row ${tableRowIndex} --column ${tableColumnIndex} --comment "Set line item description"
-//evaluate --expression "${tableColumnIndex}+1" tableColumnIndex=value
-
-//excelSet --value "${out_invoiceDate}" --file ${excelFileInstance} --getfirstsheet  --row ${tableRowIndex} --column ${tableColumnIndex} --comment "Set line item quantity"
-//evaluate --expression "${tableColumnIndex}+1" tableColumnIndex=value
-
-//evaluate --expression "${tableRowIndex}+2" tableRowIndex=value
-
+beginSub --name writeInvoiceFooter
+	getStringLength --text "${out_payload}" sublen=value
+	evaluate --expression "${sublen} - 1" sublen=value
+	getSubString --text "${out_payload}" --start 1 --length ${sublen} --comment "Remove last comma from payload" out_payload=value
+	
+	setVar --name "${out_payload}" --value "${out_payload}\r\n  ]\r\n}" --comment Amount
+	
 endSub
 
 beginSub --name writeLineItem
-setVar --name "${out_payload}" --value "${out_payload} ${productCode}"
+	
+	setVar --name "${out_payload}" --value "${out_payload} \r\n   {\r\n      \"productCode\": \"${productCode}\",\r\n      \"decription\": \"${description}\",\r\n      \"quantity\": \"${qty}\",\r\n      \"units\": \"${units}\",\r\n      \"vat\": \"${vat}\",\r\n      \"netPrice\": \"${netPrice}\",\r\n      \"totalPrice\": \"${totalPrice}\"\r\n    }," --comment Amount
+	
 endSub
 
 
 beginSub --name ParsingErrorHandler
-setVar --name "${out_success}" --value false
-setVar --name "${out_code}" --value 99
-setVar --name "${out_desc}" --value "Failed to parse ${fieldName} in ${in_invoice}"
-logMessage --message " ${out_desc}" --type "Error"
-recover
+	setVar --name "${out_success}" --value false
+	setVar --name "${out_code}" --value 99
+	setVar --name "${out_desc}" --value "Failed to parse ${fieldName} in ${in_invoice}"
+	logMessage --message " ${out_desc}" --type "Error"
+	recover
 endSub
-
-beginSub --name ParsingErrorHandler
-setVar --name "${out_success}" --value false
-setVar --name "${out_code}" --value 99
-setVar --name "${out_desc}" --value "Failed to parse ${fieldName} in ${in_invoice}"
-logMessage --message " ${out_desc}" --type "Error"
-recover
-endSub*23.0.0.0
+*23.0.0.0

@@ -1,20 +1,16 @@
-Å:// Description
+—3// Description
 //	Process invoice
 // Input Variables
 //	in_invoice			- The invoice to process (pdf file)
 //
 // Output Variables
-// 	out_invoiceNumber		- The extracted invoice number
-// 	out_invoiceDate			- The invoice date
-// 	out_amountNumber		- The invoice total amount
-// 	out_vatNumber			- The invoice VAT amount
-// 	out_vatNumber			- The invoice VAT amount
+// 	out_payload			- The extracted invoice data as a json payload
 // 	out_success			- Boolean value indicating success or failure
-// 	out_code				- 00 if success, any other number represents an error code
-// 	out_desc				- Description of error code. For example "Failed to parse VAT
+// 	out_code			- 00 if success, any other number represents an error code
+// 	out_desc			- Description of error code. For example "Failed to parse VAT
 //
 // Author:	Nigel T. Crowther
-// Date: 		26-Oct-2022
+// Date: 		26-May-2022
 // Copyright IBM Corporation 2022. All rights reserved
 //
 defVar --name in_invoice --type String --value "D:\\RPA\\github\\invoiceProcessingPAM_DM_RPA\\InvoiceApproval\\InvoiceProcessing-RPA\\testInvoices\\Momentum\\SO300323_143759_8040362 POSTED.pdf" --parameter  --required
@@ -25,20 +21,8 @@ defVar --name out_desc --type String --value SUCCESS --output
 defVar --name amountText --type String
 defVar --name pdf --type Pdf
 defVar --name fieldName --type String
-defVar --name invoiceDateTime --type DateTime
-defVar --name extractedImage --type Image
-defVar --name customFormat --type String --value "dd/MM/yyyy"
-defVar --name reason --type String
-defVar --name excelFileInstance --type Excel
-defVar --name invoiceDataTable --type DataTable
-defVar --name rowCount --type Numeric
-defVar --name tableColumnIndex --type Numeric
-defVar --name tableRowIndex --type Numeric --value 3
 defVar --name productCode --type String --value UNDEFINED
-defVar --name productYCoord --type Numeric
-defVar --name productCellCoord --type Rectangle
 defVar --name vat --type String
-defVar --name vatYCoord --type Numeric
 defVar --name qty --type String
 defVar --name yCoord --type Numeric
 defVar --name cellCoord --type Rectangle
@@ -46,8 +30,6 @@ defVar --name units --type String
 defVar --name netPrice --type String
 defVar --name totalPrice --type String
 defVar --name description --type String
-defVar --name expectedPrice --type Numeric
-defVar --name anchorImage --type Image
 defVar --name invoiceNumber --type String
 defVar --name invoiceDate --type String
 defVar --name sublen --type Numeric
