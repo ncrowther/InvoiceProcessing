@@ -1,10 +1,12 @@
 
-	Å';ò6∏πAù‘uÆæv¬òu// Description
+	Å';ò6∏πAù‘uÆæv¬‚y// Description
 //	Process invoices from outlook
 //
 // Author:	Nigel T. Crowther
 // Date: 		25-May-2023
 // Copyright IBM Corporation 2022. All rights reserved
+defVar --name operationStatus --type String --value "No Invoices" --output 
+defVar --name operationStatusMessage --type String --value "No invoices to process!" --output 
 defVar --name projectBase --type String
 defVar --name unpaidInvoicesFolder --type String
 defVar --name paidInvoicesFolder --type String
@@ -59,7 +61,7 @@ defVar --name processedInvoiceCount --type Numeric --value 0
 defVar --name failedInvoices --type Numeric --value 0
 defVar --name adminUser --type String
 defVar --name jsonPayload --type String
-defVar --name outSuccess --type String
+defVar --name outSuccess --type Boolean
 defVar --name supplierId --type String
 
 logMessage --message "${robotName} starting..." --type "Info" --logonwindows  --logname Application --source Application --eventid 0
@@ -172,7 +174,7 @@ beginSub --name sendInvoiceToAPI
 setVar --name "${logEntry}" --value "Sending invoice : ${invoice}"
 goSub --label logEntry
 
-executeScript --name "${botScriptBaseDir}/MomentumAPI.wal" --parameters "in_payload=${jsonPayload}" --output "out_success=${success},out_code=${result_code},out_desc=${result_desc}"
+// executeScript --name "${botScriptBaseDir}/MomentumAPI.wal" --parameters "in_payload=${jsonPayload}" --output "out_success=${success},out_code=${result_code},out_desc=${result_desc}"
 if --left "${success}" --operator "Is_True" --negate 
 	setVar --name "${success}" --value false
 	setVar --name "${logEntry}" --value "Failed to send invoice to API.  Code ${result_code}: ${result_desc}"
@@ -194,6 +196,9 @@ endIf
 
 setVar --name "${logEntry}" --value "Invoice moved to ${paidInvoiceName}"
 goSub --label logEntry
+
+setVar --name "${operationStatusMessage}" --value "The invoice was paid successfuly!" --comment "Set the operationStatusMessage as full success"
+setVar --name "${operationStatus}" --value "Invoice paid"
 endSub
 
 beginSub --name moveInvoiceToFailedFolder
@@ -209,6 +214,9 @@ endIf
 
 setVar --name "${logEntry}" --value "FAILURE: Invoice moved to ${failedInvoiceName}"
 goSub --label logEntry
+
+setVar --name "${operationStatusMessage}" --value "The invoice payment failed!" --comment "Set the operationStatusMessage as fail"
+setVar --name "${operationStatus}" --value "Invoice payment failed"
 endSub
 
 beginSub --name generateTimestamp
@@ -229,10 +237,10 @@ endSub
 beginSub --name executeOCRScript
 
 executeScript --name "${botScriptBaseDir}/determineInvoiceType.wal" --parameters "in_subject=${emailSubject},in_sender=${emailSender},in_invoice=${invoice}" --output "out_success=${outSuccess},out_code=${result_code},out_desc=${result_desc},out_company=${company},out_companyCode=${companyCode},out_supplierId=${supplierId}" success=value
-if --left "${success}" --operator "Is_True" --negate 
+if --left "${outSuccess}" --operator "Is_True" --negate 
 	setVar --name "${success}" --value false
 	incrementVar --number ${unidentifiedInvoiceCount}
-	setVar --name "${logEntry}" --value "Failed to determine invoice for email: ${emailSubject}"
+	setVar --name "${logEntry}" --value "Rules failed to determine invoice: ${emailSubject}"
 	goSub --label logEntry
 	return
 endIf
@@ -319,4 +327,4 @@ if --left "${success}" --operator "Is_True" --negate
 endIf
 endSub
 
-"	`Ÿ}≥∑xYB≥†«À™w@ï*23.0.0.0
+"	+≠_˜G∞(ªπÁA*23.0.0.0
