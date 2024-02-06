@@ -1,4 +1,4 @@
-þ*// Description
+Þ*// Description
 //	Invoice template
 // Input Variables
 //	in_invoice			- The invoice to process (pdf file)
@@ -33,7 +33,6 @@ defVar --name description --type String
 defVar --name invoiceNumber --type String
 defVar --name invoiceDate --type String
 defVar --name sublen --type Numeric
-defVar --name pdf1 --type Pdf
 
 onError --label ParsingErrorHandler
 
@@ -50,7 +49,7 @@ if --left "${out_success}" --operator "Is_True" --negate
 endIf
 
 // Extract Total Amount
-pdfRegionText --language "en-US" --region "701,616,115,43" --page 1 --dpix 110 --dpiy 110 --file ${pdf1} totalPrice=value
+pdfRegionText --language "en-US" --region "701,616,115,43" --page 1 --dpix 110 --dpiy 110 --file ${pdf} totalPrice=value
 trimString --text "${amountText}" --trimoption "TrimStartAndEnd" amountText=value
 
 // Extract invoice number
@@ -135,4 +134,4 @@ setVar --name "${out_desc}" --value "Failed to parse ${fieldName} in ${in_invoic
 logMessage --message " ${out_desc}" --type "Error"
 recover
 endSub
-*23.0.0.0
+*	23.0.10.0

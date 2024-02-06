@@ -1,4 +1,4 @@
-ñ// Description
+¹// Description
 //	Invoke invoice API using REST
 // Input Variables
 //	in_payload			    - The invoice to process (json)
@@ -15,5 +15,6 @@ defVar --name in_payload --type String --value "{\r\n  \"invoiceNumber\": \"INV9
 defVar --name out_success --type Boolean --value True --output
 defVar --name out_code --type Numeric --value 0 --output
 defVar --name out_desc --type String --value SUCCESS --output
-httpRequest --verb "Post" --url "http://localhost:8080/api/v3/invoice" --formatter "Json" --source "${in_payload}" out_success=success out_desc=value out_code=statusCode
-logMessage --message "Response Status Code: ${out_code}" --type "Info"*23.0.0.0
+//httpRequest --verb "Post" --url "http://localhost:8080/api/v3/invoice" --formatter "Json" --source "${in_payload}" out_success=success out_desc=value out_code=statusCode
+logMessage --message "Sent Data to API: ${in_payload}" --type "Info"
+logMessage --message "Response Status Code: ${out_code}" --type "Info"*	23.0.10.0

@@ -1,5 +1,4 @@
-
-	,qÕ≤ßäMØeMœDS+˘Â// Description
+œ// Description
 //	Determine invoice type based on input data
 // Input Variables
 //	in_sender			- The sender email address
@@ -18,15 +17,15 @@
 // Date: 	26-Oct-2022
 // Copyright IBM Corporation 2022. All rights reserved
 //
-defVar --name in_sender --type String --value "rpabot@midcounties.coop" --parameter  --required 
-defVar --name in_subject --type String --value "Abaakus invoices #1-3" --parameter  --required 
-defVar --name in_invoice --type String --value "c:\\temp\\bunzl.xlsx" --parameter  --required 
-defVar --name out_company --type String --output 
-defVar --name out_companyCode --type String --output 
-defVar --name out_supplierId --type String --output 
-defVar --name out_success --type Boolean --output 
-defVar --name out_code --type Numeric --output 
-defVar --name out_desc --type String --output 
+defVar --name in_sender --type String --value "rpabot@midcounties.coop" --parameter  --required
+defVar --name in_subject --type String --value "Abaakus invoices #1-3" --parameter  --required
+defVar --name in_invoice --type String --value "c:\\temp\\bunzl.xlsx" --parameter  --required
+defVar --name out_company --type String --output
+defVar --name out_companyCode --type String --output
+defVar --name out_supplierId --type String --output
+defVar --name out_success --type Boolean --output
+defVar --name out_code --type Numeric --output
+defVar --name out_desc --type String --output
 defVar --name companyCol --type Numeric --value 3
 defVar --name companyNameCol --type Numeric --value 2
 defVar --name companyCodeCol --type Numeric --value 3
@@ -55,25 +54,33 @@ executeRules --label invoiceTypeRule
 
 logMessage --message "Success: ${out_success}\r\nCompany: ${out_company}\r\n" --type "Info"
 beginRules --name invoiceTypeRule
-
-case --name "Speciality Drinks" --switches "CaseSwitchesAll"
-	when --left "${in_subject}" --operator "Contains" --right "Speciality Drinks"
-then
-	setVar --name "${out_company}" --value SpecialityDrinks
-	setVar --name "${out_companyCode}" --value SpecialityDrinks
-	setVar --name "${out_supplierId}" --value 786554
-	setVar --name "${out_success}" --value true
-endCase
-
-case --name "Abakus Invoices" --switches "CaseSwitchesAll"
-	when --left "${in_subject}" --operator "Contains" --right Abaakus
-then
-	setVar --name "${out_company}" --value Abakus
-	setVar --name "${out_companyCode}" --value ABAKUS
-	setVar --name "${out_supplierId}" --value 765777
-	setVar --name "${out_success}" --value true
-endCase
-
-
-endRules
-"	£]ö˛çINáAﬂ+`¢h9*23.0.0.0
+	
+	case --name "Speciality Drinks" --switches "CaseSwitchesAll"
+		when --left "${in_subject}" --operator "Contains" --right "SpecialityDrinks"
+	then
+		setVar --name "${out_company}" --value SpecialityDrinks
+		setVar --name "${out_companyCode}" --value SpecialityDrinks
+		setVar --name "${out_supplierId}" --value 786554
+		setVar --name "${out_success}" --value true
+	endCase
+	
+	case --name "Abakus Invoices" --switches "CaseSwitchesAll"
+		when --left "${in_subject}" --operator "Contains" --right Abaakus
+	then
+		setVar --name "${out_company}" --value Abakus
+		setVar --name "${out_companyCode}" --value ABAKUS
+		setVar --name "${out_supplierId}" --value 765777
+		setVar --name "${out_success}" --value true
+	endCase
+	
+	case --name "Fiction Invoices" --switches "CaseSwitchesAll"
+		when --left "${in_subject}" --operator "Contains" --right Fiction
+	then
+		setVar --name "${out_company}" --value Fiction
+		setVar --name "${out_companyCode}" --value FICTION
+		setVar --name "${out_supplierId}" --value 854636
+		setVar --name "${out_success}" --value true
+	endCase
+	
+	
+endRules*	23.0.10.0
